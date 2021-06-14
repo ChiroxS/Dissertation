@@ -16,23 +16,34 @@
 
 void print_buffer(elem_buffer_t** cpu_buffer);
 void fill_insert_buffer(FILE** file_pointer, elem_buffer_t** cpu_buffer, slab_block* slab[]);
+void fill_search_buffer(FILE** file_pointer, elem_buffer_t** cpu_buffer);
 void transfer_data(elem_buffer_t** host_buffer, elem_buffer_t** device_buffer, direction_t dir);
 
 void insert_gpu(elem_buffer_t** gpu_buffer, bucket_t** hash_table);
+void search_gpu(elem_buffer_t** gpu_buffer, bucket_t** hash_table);
 
 int  get_free_slab(slab_block_t* slab[]);
-
+//void write_search_data_to_file(elem_buffer_t** cpu_buffer, slab_block_t* slab[] )
 
 int main()
 {    
     FILE* key_value_file_pointer;
     key_value_file_pointer = fopen("data/data.txt", "r");
     if(key_value_file_pointer == NULL) {
-        printf("File path NULL \n");
+        printf("Key-value file path NULL \n");
     } else {
-        printf("File path OK \n");
+        printf("Key-value file path OK \n");
     }
     
+    FILE* key_file_pointer;
+    key_file_pointer = fopen("data/data_read.txt", "r");
+    if(key_file_pointer == NULL) {
+        printf("Key file path NULL \n");
+    } else {
+        printf("Key file path OK \n");
+    }
+
+
     //******************************************************************************
     // Initialize memory
     bucket_t *hash_table;
@@ -62,15 +73,17 @@ int main()
     transfer_data(&cpu_buffer, &gpu_buffer, HOST_TO_DEVICE);
     insert_gpu(&gpu_buffer, &hash_table);
 
-
-    /*
-    fill_serch_buffer(cpu_buffer);
-    transfer_data(cpu_buffer, gpu_buffer, HOST_TO_DEVICE);
-    search(); 
-    */ 
+    
+    fill_search_buffer(&key_file_pointer, &cpu_buffer);
+    //print_buffer(&cpu_buffer);
+    transfer_data(&cpu_buffer, &gpu_buffer, HOST_TO_DEVICE);
+    search_gpu(&gpu_buffer, &hash_table);  
+    transfer_data(&cpu_buffer, &gpu_buffer, DEVICE_TO_HOST);
+    print_buffer(&cpu_buffer);
 
     //******************************************************************************
     fclose(key_value_file_pointer);
+    fclose(key_file_pointer);
     // Free memory
     cudaFree(hash_table);
     cudaFree(gpu_buffer->key_search);
@@ -90,7 +103,20 @@ int main()
 }
 
 void insert_gpu(elem_buffer_t** gpu_buffer, bucket_t** hash_table) { 
-    gpu_insert_key <<< 1, 8 >>> ( (*gpu_buffer)->key_insert , (*hash_table), 1);
+    int nr_insert_keys = MAX_INSERT_JOBS;
+    int nr_threads = nr_insert_keys * BUCKET_SIZE;
+    int BLOCKS = nr_threads / THREADS_PER_BLOCK;
+    int THREADS = THREADS_PER_BLOCK;
+    gpu_insert_key <<< BLOCKS, THREADS>>> ( (*gpu_buffer)->key_insert , (*hash_table), nr_insert_keys);
+    cudaDeviceSynchronize();
+}
+
+void search_gpu(elem_buffer_t** gpu_buffer, bucket_t** hash_table) { 
+    int nr_search_keys = MAX_SEARCH_JOBS;
+    int nr_threads = nr_search_keys * BUCKET_SIZE;
+    int BLOCKS = nr_threads / THREADS_PER_BLOCK;
+    int THREADS = THREADS_PER_BLOCK;
+    gpu_search_key <<< BLOCKS, THREADS>>> ( (*gpu_buffer)->key_search , (*gpu_buffer)->locations,  (*hash_table), nr_search_keys);
     cudaDeviceSynchronize();
 }
 
@@ -123,12 +149,13 @@ void fill_insert_buffer(FILE** file_pointer, elem_buffer_t** cpu_buffer, slab_bl
         //printf("%s", key_value_buffer);
         strncpy((*slab)[slab_index].item[i].key, key_value_buffer, KEY_LEN);
         //***************************************************************************
+        // Compute hash and write to buffer
         uint64_t hash_result; 
         hash_result = *(uint64_t*) (&key_value_buffer[0]); // evil char to uint64 bit level hacking
         for(int j = 8; j <= KEY_LEN - 8; j+= 8) {
             hash_result = hash_result ^ *(uint64_t*) (&key_value_buffer[j]);
         }
-        //printf("Hash result for key %sis 0x%I64x\n", key_value_buffer, hash_result);
+        //printf("Hash result for insert key %sis 0x%I64x\n", key_value_buffer, hash_result);
         (*cpu_buffer)->key_insert[i].hash      = (hash_t)       (hash_result >> 32);
         (*cpu_buffer)->key_insert[i].signature = (signature_t)  (hash_result      );
         (*cpu_buffer)->key_insert[i].location = (i & SLAB_ITEM_MASK) | (slab_index << NR_SLAB_ITEMS_LOG) ;
@@ -141,6 +168,25 @@ void fill_insert_buffer(FILE** file_pointer, elem_buffer_t** cpu_buffer, slab_bl
     }
     (*cpu_buffer)->nr_insert_keys = MAX_INSERT_JOBS;
     (*slab)[slab_index].occupied = 1;
+}
+
+void fill_search_buffer(FILE** file_pointer, elem_buffer_t** cpu_buffer) { 
+    char key_value_buffer[FILE_BUFFER_LEN];
+    for(int i = 0; i < MAX_SEARCH_JOBS; i++) {
+        //***************************************************************************
+        // Compute hash and write to buffer
+        fgets(key_value_buffer, FILE_BUFFER_LEN, *file_pointer);
+        uint64_t hash_result; 
+        hash_result = *(uint64_t*) (&key_value_buffer[0]); // evil char to uint64 bit level hacking
+        for(int j = 8; j <= KEY_LEN - 8; j+= 8) {
+            hash_result = hash_result ^ *(uint64_t*) (&key_value_buffer[j]);
+        }
+        //printf("Hash result for search key %sis 0x%I64x\n", key_value_buffer, hash_result);
+        (*cpu_buffer)->key_search[i].hash      = (hash_t)       (hash_result >> 32);
+        (*cpu_buffer)->key_search[i].signature = (signature_t)  (hash_result      );
+        //***************************************************************************
+    }
+    (*cpu_buffer)->nr_search_keys = MAX_SEARCH_JOBS;
 }
 
 int get_free_slab(slab_block* slab[]) {
@@ -175,7 +221,7 @@ void print_buffer(elem_buffer_t** cpu_buffer) {
 
     printf("Locations\n");
     for(int i = 0; i < (*cpu_buffer)->nr_search_keys;i++) {
-        printf("0x%x",(*cpu_buffer)->locations[i] );
+        printf("0x%x\n",(*cpu_buffer)->locations[i] );
     }
 
 }

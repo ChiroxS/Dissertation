@@ -18,7 +18,9 @@
 #define MAX_INSERT_JOBS    512 
 #define MAX_DELETE_JOBS    512
 
-#define DEBUG_PRINT        1
+#define THREADS_PER_BLOCK 128
+
+#define DEBUG_PRINT        0
 
 typedef uint32_t hash_t;
 typedef uint32_t signature_t; 

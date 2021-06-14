@@ -21,7 +21,8 @@ __global__ void gpu_search_key(
     int first_hash = (key->hash) & HASH_TABLE_MASK ; 
     bucket_t *bucket = &(hash_map[first_hash]);
     
-    printf("SEARCH_FIRST_HASH: Thread %d block %d ID %d bucket id %d index %d bucket hash 0x%x signature 0x%x\n", threadIdx.x, blockIdx.x, idx, id, bucket_offset, first_hash, key->signature );
+    if(DEBUG_PRINT)
+        printf("SEARCH_FIRST_HASH: Thread %d block %d ID %d bucket id %d index %d bucket hash 0x%x signature 0x%x\n", threadIdx.x, blockIdx.x, idx, id, bucket_offset, first_hash, key->signature );
 
     if (bucket->signature[bucket_offset] == key->signature) {
         locations[id] = bucket->location[bucket_offset];
@@ -42,7 +43,8 @@ __global__ void gpu_search_key(
     if(warp_state == 0) {
         int second_hash = (key->hash ^ key->signature) & HASH_TABLE_MASK;
         bucket = &(hash_map[second_hash]);
-        printf("SEARCH_SECOND_HASH: Thread %d block %d ID %d bucket id %d index %d bucket hash 0x%x signature 0x%x\n", threadIdx.x, blockIdx.x, idx, id, bucket_offset, second_hash, key->signature );
+        if(DEBUG_PRINT)
+            printf("SEARCH_SECOND_HASH: Thread %d block %d ID %d bucket id %d index %d bucket hash 0x%x signature 0x%x\n", threadIdx.x, blockIdx.x, idx, id, bucket_offset, second_hash, key->signature );
         if (bucket->signature[bucket_offset] == key->signature) {
             locations[id] = bucket->location[bucket_offset];
             if(DEBUG_PRINT)

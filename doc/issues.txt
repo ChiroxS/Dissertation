@@ -1,0 +1,1 @@
+1. copy nr of keys to gpu buffer and use it when launching a kernel
