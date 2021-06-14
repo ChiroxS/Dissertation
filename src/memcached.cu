@@ -5,11 +5,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include <iostream>
-#include <string>
-#include <cstdlib>
-#include <chrono>
-
 #include "gpu_hash_functions.cu"
 #include "cpu_buffer.h"
 #include "slab.h"
@@ -27,6 +22,8 @@ int  get_free_slab(slab_block_t* slab[]);
 
 int main()
 {    
+    //******************************************************************************
+    // External file pointers 
     FILE* key_value_file_pointer;
     key_value_file_pointer = fopen("data/data_write.txt", "r");
     if(key_value_file_pointer == NULL) {
@@ -42,7 +39,6 @@ int main()
     } else {
         printf("Key file path OK \n");
     }
-
 
     //******************************************************************************
     // Initialize memory
@@ -67,13 +63,13 @@ int main()
     slab_block *slab; 
     slab = (slab_block*)malloc(SLAB_LEN * sizeof(slab_block));
     //******************************************************************************
-    
+    // Insert keys
     fill_insert_buffer(&key_value_file_pointer, &cpu_buffer, &slab);
     //print_buffer(&cpu_buffer);
     transfer_data(&cpu_buffer, &gpu_buffer, HOST_TO_DEVICE);
     insert_gpu(&gpu_buffer, &hash_table);
 
-    
+    // Retrieve keys
     fill_search_buffer(&key_file_pointer, &cpu_buffer);
     //print_buffer(&cpu_buffer);
     transfer_data(&cpu_buffer, &gpu_buffer, HOST_TO_DEVICE);
