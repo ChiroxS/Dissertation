@@ -28,7 +28,7 @@ int  get_free_slab(slab_block_t* slab[]);
 int main()
 {    
     FILE* key_value_file_pointer;
-    key_value_file_pointer = fopen("data/data.txt", "r");
+    key_value_file_pointer = fopen("data/data_write.txt", "r");
     if(key_value_file_pointer == NULL) {
         printf("Key-value file path NULL \n");
     } else {
