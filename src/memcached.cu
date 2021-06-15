@@ -18,7 +18,7 @@ void insert_gpu(elem_buffer_t** gpu_buffer, bucket_t** hash_table);
 void search_gpu(elem_buffer_t** gpu_buffer, bucket_t** hash_table);
 
 int  get_free_slab(slab_block_t* slab[]);
-//void write_search_data_to_file(elem_buffer_t** cpu_buffer, slab_block_t* slab[] )
+void write_search_data_to_file(elem_buffer_t** cpu_buffer, FILE** file_pointer,  slab_block_t* slab[]);
 
 int main()
 {    
@@ -38,6 +38,14 @@ int main()
         printf("Key file path NULL \n");
     } else {
         printf("Key file path OK \n");
+    }
+
+    FILE* result_file_pointer;
+    result_file_pointer = fopen("data/data_result.txt", "w");
+    if(result_file_pointer == NULL) {
+        printf("Result file path NULL \n");
+    } else {
+        printf("Result file path OK \n");
     }
 
     //******************************************************************************
@@ -75,11 +83,13 @@ int main()
     transfer_data(&cpu_buffer, &gpu_buffer, HOST_TO_DEVICE);
     search_gpu(&gpu_buffer, &hash_table);  
     transfer_data(&cpu_buffer, &gpu_buffer, DEVICE_TO_HOST);
-    print_buffer(&cpu_buffer);
+    //print_buffer(&cpu_buffer);
+    write_search_data_to_file(&cpu_buffer, &result_file_pointer, &slab);
 
     //******************************************************************************
     fclose(key_value_file_pointer);
     fclose(key_file_pointer);
+    fclose(result_file_pointer);
     // Free memory
     cudaFree(hash_table);
     cudaFree(gpu_buffer->key_search);
@@ -197,6 +207,22 @@ int get_free_slab(slab_block* slab[]) {
     return i;
 }
 
+void write_search_data_to_file(elem_buffer_t** cpu_buffer, FILE** file_pointer,  slab_block_t* slab[]) {
+    for(int i = 0; i < MAX_SEARCH_JOBS; i++) { 
+        char key[KEY_LEN+1];
+        char value[VALUE_LEN+1];
+        int slab_item = (*cpu_buffer)->locations[i] & SLAB_ITEM_MASK;
+        int slab_block = (*cpu_buffer)->locations[i] >> NR_SLAB_ITEMS_LOG;
+        //printf("Accessing slab block %0d item %0d \n", slab_block, slab_item);
+        strncpy(key, (*slab)[slab_block].item[slab_item].key, KEY_LEN);
+        strncpy(value, (*slab)[slab_block].item[slab_item].value, VALUE_LEN);
+        //printf("Key   %s\nValue %s\n", key, value);
+        fwrite(key   , 1 , sizeof(key) -1   , *file_pointer);
+        fwrite("\n"  , 1 , sizeof(char)  , *file_pointer);
+        fwrite(value , 1 , sizeof(value) -1  , *file_pointer);
+        fwrite("\n"  , 1 , sizeof(char)  , *file_pointer);
+    }
+}
 
 void print_buffer(elem_buffer_t** cpu_buffer) { 
     printf("**************\n");

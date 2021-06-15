@@ -52,8 +52,6 @@ Battleship_grey
 Beau_blue
 Beaver
 Beige
-B'dazzled_blue
-Big_dip_o’ruby
 Bisque
 Bistre
 Bistre_brown
