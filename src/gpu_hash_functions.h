@@ -14,11 +14,13 @@
 
 #define CUCKOO_MAX         3
 
-#define MAX_SEARCH_JOBS    512
+#define MAX_SEARCH_JOBS    32768
 #define MAX_INSERT_JOBS    512 
 #define MAX_DELETE_JOBS    512
 
-#define THREADS_PER_BLOCK 128
+#define SEARCH_TO_INSERT   MAX_SEARCH_JOBS/MAX_INSERT_JOBS
+
+#define THREADS_PER_BLOCK 1024
 
 #define DEBUG_PRINT        0
 

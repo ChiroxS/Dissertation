@@ -6,7 +6,7 @@ key_max_bytes = 64
 value_digits = 64
 nr_iterations = 64
 
-nr_keys = 512;
+nr_keys = 32 * 1024;
 
 file_dir = os.path.dirname(os.path.realpath('__file__'))
 print(file_dir)

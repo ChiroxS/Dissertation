@@ -71,12 +71,18 @@ int main()
     slab_block *slab; 
     slab = (slab_block*)malloc(SLAB_LEN * sizeof(slab_block));
     //******************************************************************************
-    // Insert keys
-    fill_insert_buffer(&key_value_file_pointer, &cpu_buffer, &slab);
-    //print_buffer(&cpu_buffer);
-    transfer_data(&cpu_buffer, &gpu_buffer, HOST_TO_DEVICE);
-    insert_gpu(&gpu_buffer, &hash_table);
+    
+    printf("Starting insert jobs\n");
+    for(int i = 0; i < SEARCH_TO_INSERT; i++) {
+        // Insert keys
+        fill_insert_buffer(&key_value_file_pointer, &cpu_buffer, &slab);
+        //print_buffer(&cpu_buffer);
+        transfer_data(&cpu_buffer, &gpu_buffer, HOST_TO_DEVICE);
+        insert_gpu(&gpu_buffer, &hash_table);
+    }
+    printf("Finished insert jobs\n");
 
+    printf("Starting search jobs\n");
     // Retrieve keys
     fill_search_buffer(&key_file_pointer, &cpu_buffer);
     //print_buffer(&cpu_buffer);
@@ -85,6 +91,7 @@ int main()
     transfer_data(&cpu_buffer, &gpu_buffer, DEVICE_TO_HOST);
     //print_buffer(&cpu_buffer);
     write_search_data_to_file(&cpu_buffer, &result_file_pointer, &slab);
+    printf("Finished search jobs\n");
 
     //******************************************************************************
     fclose(key_value_file_pointer);
@@ -173,6 +180,8 @@ void fill_insert_buffer(FILE** file_pointer, elem_buffer_t** cpu_buffer, slab_bl
         //***************************************************************************
     }
     (*cpu_buffer)->nr_insert_keys = MAX_INSERT_JOBS;
+    (*cpu_buffer)->nr_search_keys = 0;
+    (*cpu_buffer)->nr_delete_keys = 0;
     (*slab)[slab_index].occupied = 1;
 }
 
@@ -193,6 +202,8 @@ void fill_search_buffer(FILE** file_pointer, elem_buffer_t** cpu_buffer) {
         //***************************************************************************
     }
     (*cpu_buffer)->nr_search_keys = MAX_SEARCH_JOBS;
+    (*cpu_buffer)->nr_insert_keys = 0;
+    (*cpu_buffer)->nr_delete_keys = 0;
 }
 
 int get_free_slab(slab_block* slab[]) {
