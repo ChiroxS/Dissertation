@@ -2,7 +2,7 @@
 
 #define HASH_LEN           8        // 32b
 #define SIGNATURE_LEN      8        // 32
-#define BUCKET_LEN         16       // size of signature-location pair
+#define BUCKET_LEN         8       // size of signature-location pair
 #define BUCKET_SIZE        8        // 8 pairs of signature-location per bucket
 #define BUCKET_SIZE_LOG    3        
 

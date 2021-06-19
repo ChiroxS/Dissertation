@@ -1,0 +1,1 @@
+nvvp -vm "C:\Program Files\AdoptOpenJDK\jdk-8.0.275.1-hotspot\bin"

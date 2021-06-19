@@ -22,6 +22,7 @@ void write_search_data_to_file(elem_buffer_t** cpu_buffer, FILE** file_pointer, 
 
 int main()
 {    
+    cudaError_t cudaStatus;
     //******************************************************************************
     // External file pointers 
     FILE* key_value_file_pointer;
@@ -113,6 +114,12 @@ int main()
 
     free(slab);
     //******************************************************************************
+    cudaStatus = cudaDeviceReset();
+    if (cudaStatus != cudaSuccess) {
+        printf("CUDA Reset failed");
+        return 1;
+    }
+    return 0;
 }
 
 void insert_gpu(elem_buffer_t** gpu_buffer, bucket_t** hash_table) { 
