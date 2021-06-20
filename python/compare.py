@@ -29,8 +29,8 @@ for i in range(len(write_data)-1):
         print("Read: " + result_data[i])
         print("\n")
 
-print("Number of matched items: " + str(matched))
-print("Number of failed items: " + str(failed))
+print("Number of matched items: " + str(int(matched/2)))
+print("Number of failed items: " + str(int(failed/2)))
 
 pass_rate = matched / (matched + failed) * 100
 pass_rate = round(pass_rate,4)
