@@ -32,5 +32,9 @@ for i in range(len(write_data)-1):
 print("Number of matched items: " + str(matched))
 print("Number of failed items: " + str(failed))
 
+pass_rate = matched / (matched + failed) * 100
+pass_rate = round(pass_rate,4)
+print("\nPass rate: " + str(pass_rate) + "%")
+
 write_file.close()
 result_file.close()
