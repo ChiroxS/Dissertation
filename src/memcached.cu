@@ -73,7 +73,7 @@ int main()
     slab = (slab_block*)malloc(SLAB_LEN * sizeof(slab_block));
     //******************************************************************************
     
-    printf("Starting insert jobs\n");
+    printf("Starting %0d insert jobs\n", SEARCH_TO_INSERT);
     for(int i = 0; i < SEARCH_TO_INSERT; i++) {
         // Insert keys
         fill_insert_buffer(&key_value_file_pointer, &cpu_buffer, &slab);
@@ -83,7 +83,7 @@ int main()
     }
     printf("Finished insert jobs\n");
 
-    printf("Starting search jobs\n");
+    printf("Starting 1 search job\n");
     // Retrieve keys
     fill_search_buffer(&key_file_pointer, &cpu_buffer);
     //print_buffer(&cpu_buffer);
@@ -92,7 +92,7 @@ int main()
     transfer_data(&cpu_buffer, &gpu_buffer, DEVICE_TO_HOST);
     //print_buffer(&cpu_buffer);
     write_search_data_to_file(&cpu_buffer, &result_file_pointer, &slab);
-    printf("Finished search jobs\n");
+    printf("Finished search job\n");
 
     //******************************************************************************
     fclose(key_value_file_pointer);
